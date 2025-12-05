@@ -27,6 +27,7 @@
 # Start coding below:
 
 from library import book, member, utils
+from datetime import datetime
 
 class LibrarySystem:
     def __init__(self):
@@ -51,7 +52,7 @@ class LibrarySystem:
             member_obj = self.members[member_id]
             book_obj = self.books[book_id]
             if member_obj.borrow_book(book_id) and book_obj.borrow(member_id):
-                self.transactions.append((member_id,member_obj.name, book_id,book_obj.title, "borrowed"))
+                self.transactions.append((member_id,member_obj.name, book_id,book_obj.title, "borrowed",book_obj.due_date))
                 return True
         return False
 
@@ -78,20 +79,75 @@ class LibrarySystem:
             member_obj = self.members[member_id]
             return [self.books[book_id] for book_id in member_obj.borrowed_books]
         return []
-
+    
+    def get_overdue_books(self):
+        overdue_books = []
+        now = datetime.now()
+        for book in self.books.values():
+            if not book.is_borrowed or not book.due_date :
+                continue
+            try:
+                due = datetime.strptime(book.due_date, "%d-%m-%Y")
+                if now > due:
+                    overdue_books.append(book)
+            except ValueError:
+                continue
+        return overdue_books
+    def get_time_left(self):
+        time_left = ""
+        now = datetime.now()
+        for book in self.books.values():
+            if not book.is_borrowed or not book.due_date:
+                continue
+            try:
+                due = datetime.strptime(book.due_date, "%d-%m-%Y")
+                days_left = (due - now).days
+                if days_left < 0:
+                    time_left += f", Overdue by {-days_left} days"
+                else:
+                    time_left += f", {days_left} days left"
+            except ValueError:
+                continue
+        return time_left
     def generate_report(self) -> str:
+        overdue_books = self.get_overdue_books()
         report_lines = ["Library Report:"]
         report_lines.append(f"Total Books: {len(self.books)}")
         report_lines.append(f"Total Members: {len(self.members)}")
         report_lines.append(f"Available Books: {len([b for b in self.books.values() if b.is_borrowed == False])}")
         report_lines.append(f"Borrowed Books: {len([b for b in self.books.values() if b.is_borrowed == True])}")
         report_lines.append(f"Active Borrowers: {len([m for m in self.members.values() if m.borrowed_books])}")
+        report_lines.append(f"Overdue Books: {len(overdue_books)}")
+        report_lines.append("")
         report_lines.append("Transactions:")
-        for member_id,member_name, book_id, book_title, action in self.transactions:
-            member_name = self.members[member_id].name
-            book_title = self.books[book_id].title
+        for transaction in self.transactions:
+            if len(transaction) == 6:
+                member_id, member_name, book_id, book_title, action, due_date = transaction
+            elif len(transaction) == 5:
+                member_id, member_name, book_id, book_title, action = transaction
+                due_date = None
+            else:
+                continue
+            if member_id in self.members:
+                member_name = self.members[member_id].name
+            if book_id in self.books:
+                book_title = self.books[book_id].title
+            time_left = "N/A"
+            if due_date:
+                try:
+                    due_date = datetime.strptime(due_date, "%d-%m-%Y")
+                    days_left = (due_date - datetime.now()).days
+                    time_left = f"{days_left} days left" if days_left >= 0 else f"Overdue by {-days_left} days"
+                except Exception:
+                    time_left = "N/A"
+
             report_lines.append(
-            f"Member: {member_name} (ID: {member_id}), Book: {book_title} (ID: {book_id}), Action: {action}"
+                f"Member: {member_name} (ID: {member_id}), Book: {book_title} (ID: {book_id}), Action: {action}, Time Left: {time_left}"
             )
+        if overdue_books:
+            report_lines.append("")
+            report_lines.append("Overdue Books:")
+            for book in overdue_books:
+                report_lines.append(f"- {book.title} (ID: {book.book_id}), Borrowed by: {book.borrowed_by}, Due: {book.due_date}")
 
         return "\n".join(report_lines)

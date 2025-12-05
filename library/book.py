@@ -19,19 +19,25 @@
 #
 # Start coding below:
 
+from datetime import datetime,timedelta
+
 class Book:
-    def __init__(self, book_id, title, author, isbn,is_borrowed=False, borrowed_by=None):
+    def __init__(self, book_id, title, author, isbn,is_borrowed=False, borrowed_by=None,borrow_date=None,due_date=None):
         self.book_id = book_id
         self.title = title
         self.author = author
         self.isbn = isbn
         self.is_borrowed = is_borrowed
         self.borrowed_by = borrowed_by
+        self.borrow_date = borrow_date
+        self.due_date = due_date
 
     def borrow(self, member_id) -> bool:
         if not self.is_borrowed:
             self.is_borrowed = True
             self.borrowed_by = member_id
+            self.borrow_date = datetime.now().strftime("%d-%m-%Y")
+            self.due_date = (datetime.now() + timedelta(days=14)).strftime("%d-%m-%Y")
             return True
         return False
 
@@ -39,6 +45,8 @@ class Book:
         if self.is_borrowed:
             self.is_borrowed = False
             self.borrowed_by = None
+            self.borrow_date = None
+            self.due_date = None
             return True
         return False
 
@@ -49,3 +57,4 @@ class Book:
 
     def __str__(self) -> str:
         return f"{self.title} by {self.author} (ISBN: {self.isbn})"
+    
