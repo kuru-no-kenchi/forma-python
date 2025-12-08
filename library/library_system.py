@@ -27,8 +27,9 @@
 # Start coding below:
 
 from library import book, member, utils
-from datetime import datetime, timedelta
-
+from datetime import datetime
+import difflib,csv
+from reportlab.pdfgen import canvas
 class LibrarySystem:
     FINE_PER_DAY = 5
     def serialize_transaction(self,tx):
@@ -85,7 +86,11 @@ class LibrarySystem:
             b for b in self.books.values()
             if keyword in b.title.lower() or keyword in b.author.lower() or keyword in b.isbn.lower()
         ]
-
+    def search_books_fuzzy(self, keyword) -> list:
+        titles = [book.title for book in self.books.values()]
+        matches = difflib.get_close_matches(keyword, titles, cutoff=0.3)
+        return [book for book in self.books.values() if book.title in matches]
+    
     def get_member_books(self, member_id) -> list:
         if member_id in self.members:
             return [self.books[b_id] for b_id in self.members[member_id].borrowed_books]
@@ -118,6 +123,53 @@ class LibrarySystem:
         today = datetime.now()
         days_overdue = (today - due).days
         return max(0, days_overdue * self.FINE_PER_DAY)
+
+    def export_reports_to_csv(self, filename="export_reports.csv"):
+        if not self.books:
+            print("No reports to export.")
+            return False
+        try :
+            with open(filename, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Book ID", "Title", "Author", "Category", "Borrowed", "Borrower ID", "Borrower Name","Borrow Date","Due Date","Return Date"])
+                for book in self.books.values():
+                    writer.writerow([
+                        book.book_id,
+                        book.title,
+                        book.author,
+                        book.category,
+                        book.is_borrowed,
+                        book.borrowed_by if book.borrowed_by else "No one borrowed this book",
+                        self.members[book.borrowed_by].name if book.borrowed_by in self.members else "",
+                        book.borrow_date if book.borrow_date else "No date registered",
+                        book.due_date if book.due_date else "No date registered",
+                        book.return_date if book.return_date else "No date registered",
+                    ])
+            return True
+        except Exception as e:
+            print(f"Failed to export reports to CSV: {e}")
+            return False
+
+    def export_reports_to_pdf(self, filename="export_reports.pdf"):
+        if not self.books:
+            print("No reports to export.")
+            return False
+        try :
+            file = canvas.Canvas(filename)
+            y = 800
+            file.setFont("Helvetica", 10)
+            for book in self.books.values():
+                text = f"{book.book_id} - {book.title} | {book.author} | {book.category} | Borrowed: {book.is_borrowed} | Borrowed By: {self.members[book.borrowed_by].name if book.borrowed_by in self.members else ''} | Borrow Date: {book.borrow_date if book.borrow_date else 'N/A'} | Due Date: {book.due_date if book.due_date else 'N/A'} | Return Date: {book.return_date if book.return_date else 'N/A'}"
+                file.drawString(50, y, text)
+                y -= 20
+                if y < 50:
+                    file.showPage()
+                    y = 800
+            file.save()
+            return True
+        except Exception as e:
+            print(f"Failed to export reports to PDF: {e}")
+            return False
 
     def generate_report(self) -> str:
         overdue_books = self.get_overdue_books()

@@ -46,16 +46,19 @@ def main():
         print("7. Generate library report")
         print("8. Save data")
         print("9. Load data")
-        print("10. Exit")
+        print("10. Export reports to CSV")
+        print("11. Export reports to PDF")
+        print("12. Exit")
 
-        choice = input("Enter your choice (1-10): ")
+        choice = input("Enter your choice (1-12): ")
 
         try:
             if choice == '1':
                 title = input("Enter book title: ")
                 author = input("Enter book author: ")
                 isbn = input("Enter book ISBN: ")
-                book_id = library.add_book(title, author, isbn)
+                category = input("Enter book category: ")
+                book_id = library.add_book(title, author, isbn, category)
                 print(f"Book added with ID: {book_id}")
 
             elif choice == '2':
@@ -86,8 +89,12 @@ def main():
             elif choice == '5':
                 keyword = input("Enter search keyword: ")
                 results = library.search_books(keyword)
-                for book in results:
-                    print(book.get_info())
+                # results = library.search_books_fuzzy(keyword)
+                if not results:
+                    print("No books found.")
+                else:
+                    for book in results:
+                        print(book.get_info())
 
             elif choice == '6':
                 member_id = input("Enter member ID: ")
@@ -117,8 +124,11 @@ def main():
                     library.members = {member_id: Member(**member_data) for member_id, member_data in data.get("members", {}).items()}
                     library.transactions = data.get("transactions", [])
                 print("Data loaded successfully.")
-
             elif choice == '10':
+                library.export_reports_to_csv()
+            elif choice == '11':
+                library.export_reports_to_pdf()
+            elif choice == '12':
                 print("Exiting the program.")
                 break
 

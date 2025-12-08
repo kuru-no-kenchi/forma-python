@@ -25,11 +25,12 @@ from datetime import datetime, timedelta
 
 class Book:
     DATE_FORMAT = "%d-%m-%Y"
-    def __init__(self, book_id, title, author, isbn,is_borrowed=False, borrowed_by=None,borrow_date=None, due_date=None, return_date=None):
+    def __init__(self, book_id, title, author, isbn,category = "",is_borrowed=False, borrowed_by=None,borrow_date=None, due_date=None, return_date=None):
         self.book_id = book_id
         self.title = title
         self.author = author
         self.isbn = isbn
+        self.category = category
         self.is_borrowed = is_borrowed
         self.borrowed_by = borrowed_by
         self.borrow_date = borrow_date
@@ -62,9 +63,11 @@ class Book:
             f"Book ID: {self.book_id}, Title: {self.title}, Author: {self.author}, "
             f"ISBN: {self.isbn}, Status: {status}{borrower_info}"
         )
+    def filter_books_by_category(self, category):
+        return [book for book in self.books.values() if book.category.lower() == category.lower()]
 
     def __str__(self) -> str:
-        return f"{self.title} by {self.author} (ISBN: {self.isbn})"
+        return f"{self.title} by {self.author} (ISBN: {self.isbn}) from {self.category}"
     
     def serialize_book(book):
         return {
@@ -72,6 +75,7 @@ class Book:
             "title": book.title,
             "author": book.author,
             "isbn": book.isbn,
+            "category": book.category,
             "is_borrowed": book.is_borrowed,
             "borrowed_by": book.borrowed_by,
             "borrow_date": book.borrow_date.strftime("%d-%m-%Y") if book.borrow_date else None,
