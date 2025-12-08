@@ -101,9 +101,9 @@ def main():
 
             elif choice == '8':
                 data = {
-                    "books_id": {book_id: vars(book) for book_id, book in library.books.items()},
-                    "members": {member_id: vars(member) for member_id, member in library.members.items()},
-                    "transactions": library.transactions
+                    "books_id": {book_id: Book.serialize_book(book) for book_id, book in library.books.items()},
+                    "members": {member_id: Member.serialize_member(member) for member_id, member in library.members.items()},
+                    "transactions": [library.serialize_transaction(tx) for tx in library.transactions]
                 }
                 if utils.save_to_file(data, data_file):
                     print("Data saved successfully.")
