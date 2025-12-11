@@ -26,6 +26,7 @@
 # Start coding below:
 
 import library.library_system as ls
+import library.library_GUI as GUI
 import library.utils as utils
 from library.book import Book
 from library.member import Member
@@ -48,9 +49,10 @@ def main():
         print("9. Load data")
         print("10. Export reports to CSV")
         print("11. Export reports to PDF")
-        print("12. Exit")
+        print("12. Open GUI")
+        print("13. Exit")
 
-        choice = input("Enter your choice (1-12): ")
+        choice = input("Enter your choice (1-13): ")
 
         try:
             if choice == '1':
@@ -129,13 +131,16 @@ def main():
             elif choice == '11':
                 library.export_reports_to_pdf()
             elif choice == '12':
+                gui = GUI.Library_GUI(library)
+                gui.run()
+            elif choice == '13':
                 print("Exiting the program.")
                 break
 
             else:
-                print("Invalid choice. Please enter a number between 1 and 10.")
-
+                print("Invalid choice. Please enter a number between 1 and 13.")
         except Exception as e:
             print(f"An error occurred: {e}")
+
 if __name__ == "__main__":
     main()

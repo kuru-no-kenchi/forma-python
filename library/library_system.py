@@ -86,6 +86,7 @@ class LibrarySystem:
             b for b in self.books.values()
             if keyword in b.title.lower() or keyword in b.author.lower() or keyword in b.isbn.lower()
         ]
+    
     def search_books_fuzzy(self, keyword) -> list:
         titles = [book.title for book in self.books.values()]
         matches = difflib.get_close_matches(keyword, titles, cutoff=0.3)
@@ -170,7 +171,26 @@ class LibrarySystem:
         except Exception as e:
             print(f"Failed to export reports to PDF: {e}")
             return False
+        
+    def load_from_json(self, filename):
+        data = utils.load_from_file(filename)
+        if data:
+            self.books = {book_id: book.Book(**book_data)
+                          for book_id, book_data in data.get("books_id", {}).items()}
+            self.members = {member_id: member.Member(**member_data)
+                            for member_id, member_data in data.get("members", {}).items()}
+            self.transactions = data.get("transactions", [])
+            return True
+        return False
 
+    def save_to_json(self, filename):
+        data = {
+            "books_id": {book_id: vars(book) for book_id, book in self.books.items()},
+            "members": {member_id: vars(member) for member_id, member in self.members.items()},
+            "transactions": self.transactions
+        }
+        return utils.save_to_file(data, filename)
+    
     def generate_report(self) -> str:
         overdue_books = self.get_overdue_books()
         report_lines = []
@@ -183,14 +203,10 @@ class LibrarySystem:
         report_lines.append(f"Overdue Books: {len(overdue_books)}")
         report_lines.append("")
         report_lines.append("---- TRANSACTIONS ----")
-
         for member_id, book_id, action, action_date, due_date in self.transactions:
-
             member_name = self.members[member_id].name if member_id in self.members else "Unknown"
             book_title  = self.books[book_id].title  if book_id in self.books else "Unknown"
-
             time_left = "N/A"
-
             if due_date:
                 try:
                     if isinstance(due_date, datetime):
@@ -206,12 +222,10 @@ class LibrarySystem:
                         time_left = f"Overdue by {-days_remaining} days"
                 except Exception:
                     time_left = "N/A"
-
             report_lines.append(
                 f"- {action_date}: The member {member_name} (ID {member_id}) {action} "
                 f"the book '{book_title}' (ID {book_id}) | Time Left: {time_left}"
             )
-
         if overdue_books:
             report_lines.append("")
             report_lines.append("---- OVERDUE BOOKS ----")
@@ -221,6 +235,5 @@ class LibrarySystem:
                     f"{b.title} (ID: {b.book_id}) | Borrowed by: {b.borrowed_by} | "
                     f"Due: {b.due_date} | Fine: {fine} MAD"
                 )
-
         return "\n".join(report_lines)
 
